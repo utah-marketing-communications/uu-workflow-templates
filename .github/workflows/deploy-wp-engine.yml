@@ -1,0 +1,119 @@
+name: Reusable WP Engine Deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment_type:
+        description: 'Environment type (staging or production)'
+        required: true
+        type: string
+      tag_name:
+        description: 'Tag name to deploy (for production)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Run deployment in dry run mode (production only)'
+        required: false
+        type: boolean
+        default: false
+      delete:
+        description: 'Include --delete flag in deployment (production only)'
+        required: false
+        type: boolean
+        default: true
+      cache_clear:
+        description: 'Clear WP Engine cache after deploy'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      WPE_ORG_API_USER:
+        description: 'WP Engine API username'
+        required: true
+      WPE_ORG_API_PASS:
+        description: 'WP Engine API password'
+        required: true
+      WPE_ORG_SSHG_KEY_PRIVATE:
+        description: 'WP Engine SSH private key'
+        required: true
+
+jobs:
+  fetch-installs:
+    runs-on: ubuntu-latest
+    outputs:
+      envs: ${{ steps.extract.outputs.envs }}
+    steps:
+      - name: Fetch installs from WP Engine API
+        id: fetch
+        run: |
+          curl -s -u "${{ secrets.WPE_ORG_API_USER }}:${{ secrets.WPE_ORG_API_PASS }}" \
+            "https://api.wpengineapi.com/v1/installs?limit=100" \
+            -o installs.json
+      - name: Extract environment names
+        id: extract
+        run: |
+          if [ "${{ inputs.environment_type }}" = "production" ]; then
+            envs=$(jq -r '[.results[] | select(.environment == "production") | .name] | @json' installs.json)
+          else
+            envs=$(jq -r '[.results[] | select(.environment == "staging") | .name] | @json' installs.json)
+          fi
+          echo "envs=$envs" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: fetch-installs
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: ${{ fromJson(needs.fetch-installs.outputs.envs) }}
+      max-parallel: 5
+    steps:
+      - name: Test SSH access before deployment
+        run: |
+          echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
+          chmod 600 $HOME/wpe_key
+          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net "echo 'SSH access confirmed'" 2>/dev/null; then
+            echo "✅ SSH access confirmed for ${{ matrix.env }}"
+          else
+            echo "❌ SSH access failed for ${{ matrix.env }} - skipping deployment"
+            exit 0
+          fi
+
+      - name: Delay to avoid rate limiting
+        run: |
+          echo "Waiting 3 seconds to avoid WP Engine rate limits..."
+          sleep 3
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag_name || 'main' }}
+
+      - name: Ensure plugin directory exists
+        run: |
+          echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
+          chmod 600 $HOME/wpe_key
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
+            "mkdir -p sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget"
+
+      - name: Deploy to WP Engine
+        uses: wpengine/github-action-wpe-site-deploy@v3
+        with:
+          WPE_ENV: ${{ matrix.env }}
+          WPE_SSHG_KEY_PRIVATE: ${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}
+          SRC_PATH: ./
+          REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget/
+          PHP_LINT: true
+          CACHE_CLEAR: ${{ inputs.cache_clear }}
+          FLAGS: -azvr --inplace --exclude=".*" ${{ inputs.delete && '--delete' || '' }} ${{ inputs.dry_run && '--dry-run' || '' }}
+        continue-on-error: true
+
+      - name: Adjust permissions on deployed files
+        run: |
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
+            "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget -type d -exec chmod 775 {} +; \
+             find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget -type f -exec chmod 664 {} +"
+
+      - name: Log Deployment Summary
+        run: |
+          echo "✅ Deployed to WP Engine ${{ inputs.environment_type }} (${{ matrix.env }})." >> $GITHUB_STEP_SUMMARY

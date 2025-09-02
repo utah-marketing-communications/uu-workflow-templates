@@ -1,0 +1,133 @@
+name: Generic Production Deployment
+
+# This workflow can be called by other repositories
+on:
+  workflow_call:
+    inputs:
+      widget_name:
+        description: 'Name of the widget being deployed'
+        required: true
+        type: string
+      tag_name:
+        description: 'Tag name to deploy'
+        required: true
+        type: string
+      # Environment configurations
+      deploy_aux:
+        description: 'Deploy to AUX production'
+        type: boolean
+        default: false
+      deploy_bryce:
+        description: 'Deploy to BRYCE production'
+        type: boolean
+        default: false
+      deploy_cap_reef:
+        description: 'Deploy to CAP REEF production'
+        type: boolean
+        default: false
+      deploy_zion:
+        description: 'Deploy to ZION production'
+        type: boolean
+        default: false
+      deploy_wp_engine:
+        description: 'Deploy to WP Engine production'
+        type: boolean
+        default: false
+      # AWS settings
+      aws_delete:
+        description: 'Include --delete flag in AWS deployments'
+        type: boolean
+        default: false
+      # WP Engine settings
+      wp_dry_run:
+        description: 'Run WP Engine deployment in dry run mode'
+        type: boolean
+        default: false
+      wp_delete:
+        description: 'Include --delete flag in WP Engine deployment'
+        type: boolean
+        default: false
+      wp_cache_clear:
+        description: 'Clear WP Engine cache after deploy'
+        type: boolean
+        default: false
+
+jobs:
+  # AUX Production
+  deploy-aux-production:
+    if: inputs.deploy_aux
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: aux-production
+      server_path: /var/www/html/aux.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.AUX_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.AUX_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.AUX_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.AUX_PROD_SSH_HOST }}
+
+  # BRYCE Production
+  deploy-bryce-production:
+    if: inputs.deploy_bryce
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: bryce-production
+      server_path: /var/www/html/bryce.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.BRYCE_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.BRYCE_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
+
+  # CAP REEF Production
+  deploy-cap-reef-production:
+    if: inputs.deploy_cap_reef
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: cap-reef-production
+      server_path: /var/www/html/capreef.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.CAP_REEF_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.CAP_REEF_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.CAP_REEF_PROD_SSH_HOST }}
+
+  # ZION Production
+  deploy-zion-production:
+    if: inputs.deploy_zion
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: zion-production
+      server_path: /var/www/html/zion.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.ZION_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.ZION_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.ZION_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.ZION_PROD_SSH_HOST }}
+
+  # WP Engine Production
+  deploy-wp-engine-production:
+    if: inputs.deploy_wp_engine
+    uses: ./.github/workflows/deploy-wp-engine.yml
+    with:
+      environment_type: production
+      tag_name: ${{ inputs.tag_name }}
+      dry_run: ${{ inputs.wp_dry_run }}
+      delete: ${{ inputs.wp_delete }}
+      cache_clear: ${{ inputs.wp_cache_clear }}
+    secrets:
+      WPE_ORG_API_USER: ${{ secrets.WPE_ORG_API_USER }}
+      WPE_ORG_API_PASS: ${{ secrets.WPE_ORG_API_PASS }}
+      WPE_ORG_SSHG_KEY_PRIVATE: ${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}

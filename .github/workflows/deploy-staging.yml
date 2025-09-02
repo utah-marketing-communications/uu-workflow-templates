@@ -1,0 +1,129 @@
+name: Generic Staging Deployment
+
+# This workflow can be called by other repositories
+on:
+  workflow_call:
+    inputs:
+      widget_name:
+        description: 'Name of the widget being deployed'
+        required: true
+        type: string
+      tag_name:
+        description: 'Tag name to deploy'
+        required: true
+        type: string
+      # Environment configurations
+      deploy_aux:
+        description: 'Deploy to AUX staging'
+        type: boolean
+        default: false
+      deploy_bryce:
+        description: 'Deploy to BRYCE staging'
+        type: boolean
+        default: false
+      deploy_cap_reef:
+        description: 'Deploy to CAP REEF staging'
+        type: boolean
+        default: false
+      deploy_zion:
+        description: 'Deploy to ZION staging'
+        type: boolean
+        default: false
+      deploy_wp_engine:
+        description: 'Deploy to WP Engine staging'
+        type: boolean
+        default: false
+      # AWS settings
+      aws_delete:
+        description: 'Include --delete flag in AWS deployments'
+        type: boolean
+        default: false
+      # WP Engine settings
+      wp_delete:
+        description: 'Include --delete flag in WP Engine deployments'
+        type: boolean
+        default: true
+      wp_cache_clear:
+        description: 'Clear WP Engine cache after deploy'
+        type: boolean
+        default: false
+
+jobs:
+  # AUX Staging
+  deploy-aux-staging:
+    if: inputs.deploy_aux
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: aux-staging
+      server_path: /var/www/html/aux.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: false
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.AUX_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.AUX_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.AUX_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.AUX_STG_SSH_HOST }}
+
+  # BRYCE Staging
+  deploy-bryce-staging:
+    if: inputs.deploy_bryce
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: bryce-staging
+      server_path: /var/www/html/bryce.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: false
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.BRYCE_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.BRYCE_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.BRYCE_STG_SSH_HOST }}
+
+  # CAP REEF Staging
+  deploy-cap-reef-staging:
+    if: inputs.deploy_cap_reef
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: cap-reef-staging
+      server_path: /var/www/html/capitolreef.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: false
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.CAP_REEF_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.CAP_REEF_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.CAP_REEF_STG_SSH_HOST }}
+
+  # ZION Staging
+  deploy-zion-staging:
+    if: inputs.deploy_zion
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: zion-staging
+      server_path: /var/www/html/zion.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: false
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.ZION_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.ZION_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.ZION_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.ZION_STG_SSH_HOST }}
+
+  # WP Engine Staging
+  deploy-wp-engine-staging:
+    if: inputs.deploy_wp_engine
+    uses: ./.github/workflows/deploy-wp-engine.yml
+    with:
+      environment_type: staging
+      tag_name: ${{ inputs.tag_name }}
+      dry_run: false
+      delete: ${{ inputs.wp_delete }}
+      cache_clear: ${{ inputs.wp_cache_clear }}
+    secrets:
+      WPE_ORG_API_USER: ${{ secrets.WPE_ORG_API_USER }}
+      WPE_ORG_API_PASS: ${{ secrets.WPE_ORG_API_PASS }}
+      WPE_ORG_SSHG_KEY_PRIVATE: ${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}

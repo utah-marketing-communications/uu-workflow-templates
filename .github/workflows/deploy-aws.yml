@@ -1,0 +1,87 @@
+name: Reusable AWS Deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment name (e.g., aux-staging, bryce-production)'
+        required: true
+        type: string
+      server_path:
+        description: 'Server path for the deployment'
+        required: true
+        type: string
+      tag_name:
+        description: 'Tag name to deploy'
+        required: true
+        type: string
+      write_version_file:
+        description: 'Write version.txt file after deployment'
+        required: false
+        type: boolean
+        default: false
+      delete:
+        description: 'Delete files on the server that are not in the local directory'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      SSH_PRIVATE_KEY:
+        description: 'SSH private key for the server'
+        required: true
+      SSH_PORT:
+        description: 'SSH port for the server'
+        required: true
+      SSH_USER:
+        description: 'SSH user for the server'
+        required: true
+      SSH_HOST:
+        description: 'SSH host for the server'
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the repository code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag_name }}
+
+      # Step 2: Set up SSH key using modern SSH agent
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # Step 3: Log the start of the deployment process
+      - name: Log start of deployment
+        run: echo "Starting deployment to ${{ inputs.environment }}..."
+
+      # Step 4: Ensure the target directory exists on the server
+      - name: Ensure target directory exists on server
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ${{ inputs.server_path }}"
+
+      # Step 5: Use rsync to deploy the widget files (excluding certain folders)
+      - name: Deploy with rsync
+        run: |
+          rsync -avz ${{ inputs.delete && '--delete' || '' }} --exclude-from=.rsyncignore \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}" ./ \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ inputs.server_path }}/
+
+      # Step 6: Write version file (for production deployments)
+      - name: Write deployed version file
+        if: inputs.write_version_file
+        run: |
+          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "echo '${{ inputs.tag_name }}' > ${{ inputs.server_path }}/version.txt"
+
+      # Step 7: Log the completion of the deployment process
+      - name: Log completion
+        run: echo "✅ Deployment to ${{ inputs.environment }} completed."
