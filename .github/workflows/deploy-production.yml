@@ -69,7 +69,7 @@ jobs:
       SSH_USER: ${{ secrets.AUX_PROD_SSH_USER }}
       SSH_HOST: ${{ secrets.AUX_PROD_SSH_HOST }}
 
-  # BRYCE Production
+  # BRYCE Production - COMMENTED OUT FOR INITIAL TESTING
   # deploy-bryce-production:
   #   if: inputs.deploy_bryce
   #   uses: ./.github/workflows/deploy-aws.yml
@@ -85,7 +85,7 @@ jobs:
   #     SSH_USER: ${{ secrets.BRYCE_PROD_SSH_USER }}
   #     SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
 
-  # CAP REEF Production
+  # CAP REEF Production - COMMENTED OUT FOR INITIAL TESTING
   # deploy-cap-reef-production:
   #   if: inputs.deploy_cap_reef
   #   uses: ./.github/workflows/deploy-aws.yml
@@ -101,7 +101,7 @@ jobs:
   #     SSH_USER: ${{ secrets.CAP_REEF_PROD_SSH_USER }}
   #     SSH_HOST: ${{ secrets.CAP_REEF_PROD_SSH_HOST }}
 
-  # ZION Production
+  # ZION Production - COMMENTED OUT FOR INITIAL TESTING
   # deploy-zion-production:
   #   if: inputs.deploy_zion
   #   uses: ./.github/workflows/deploy-aws.yml
@@ -117,7 +117,7 @@ jobs:
   #     SSH_USER: ${{ secrets.ZION_PROD_SSH_USER }}
   #     SSH_HOST: ${{ secrets.ZION_PROD_SSH_HOST }}
 
-  # WP Engine Production
+  # WP Engine Production - COMMENTED OUT FOR INITIAL TESTING
   # deploy-wp-engine-production:
   #   if: inputs.deploy_wp_engine
   #   uses: ./.github/workflows/deploy-wp-engine.yml

@@ -65,7 +65,7 @@ jobs:
       SSH_USER: ${{ secrets.AUX_STG_SSH_USER }}
       SSH_HOST: ${{ secrets.AUX_STG_SSH_HOST }}
 
-  # BRYCE Staging
+  # BRYCE Staging - COMMENTED OUT FOR INITIAL TESTING
   # deploy-bryce-staging:
   #   if: inputs.deploy_bryce
   #   uses: ./.github/workflows/deploy-aws.yml
@@ -81,7 +81,7 @@ jobs:
   #     SSH_USER: ${{ secrets.BRYCE_STG_SSH_USER }}
   #     SSH_HOST: ${{ secrets.BRYCE_STG_SSH_HOST }}
 
-  # CAP REEF Staging
+  # CAP REEF Staging - COMMENTED OUT FOR INITIAL TESTING
   # deploy-cap-reef-staging:
   #   if: inputs.deploy_cap_reef
   #   uses: ./.github/workflows/deploy-aws.yml
@@ -97,7 +97,7 @@ jobs:
   #     SSH_USER: ${{ secrets.CAP_REEF_STG_SSH_USER }}
   #     SSH_HOST: ${{ secrets.CAP_REEF_STG_SSH_HOST }}
 
-  # ZION Staging
+  # ZION Staging - COMMENTED OUT FOR INITIAL TESTING
   # deploy-zion-staging:
   #   if: inputs.deploy_zion
   #   uses: ./.github/workflows/deploy-aws.yml
@@ -113,7 +113,7 @@ jobs:
   #     SSH_USER: ${{ secrets.ZION_STG_SSH_USER }}
   #     SSH_HOST: ${{ secrets.ZION_STG_SSH_HOST }}
 
-  # WP Engine Staging
+  # WP Engine Staging - COMMENTED OUT FOR INITIAL TESTING
   # deploy-wp-engine-staging:
   #   if: inputs.deploy_wp_engine
   #   uses: ./.github/workflows/deploy-wp-engine.yml
