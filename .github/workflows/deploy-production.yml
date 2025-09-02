@@ -86,36 +86,36 @@ jobs:
       SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
 
   # CAP REEF Production - COMMENTED OUT FOR INITIAL TESTING
-  # deploy-cap-reef-production:
-  #   if: inputs.deploy_cap_reef
-  #   uses: ./.github/workflows/deploy-aws.yml
-  #   with:
-  #     environment: cap-reef-production
-  #     server_path: /var/www/html/capreef.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
-  #     tag_name: ${{ inputs.tag_name }}
-  #     write_version_file: true
-  #     delete: ${{ inputs.aws_delete }}
-  #   secrets:
-  #     SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_PROD_SSH_KEY }}
-  #     SSH_PORT: ${{ secrets.CAP_REEF_PROD_SSH_PORT }}
-  #     SSH_USER: ${{ secrets.CAP_REEF_PROD_SSH_USER }}
-  #     SSH_HOST: ${{ secrets.CAP_REEF_PROD_SSH_HOST }}
+  deploy-cap-reef-production:
+    if: inputs.deploy_cap_reef
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: cap-reef-production
+      server_path: /var/www/html/capreef.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.CAP_REEF_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.CAP_REEF_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.CAP_REEF_PROD_SSH_HOST }}
 
   # ZION Production - COMMENTED OUT FOR INITIAL TESTING
-  # deploy-zion-production:
-  #   if: inputs.deploy_zion
-  #   uses: ./.github/workflows/deploy-aws.yml
-  #   with:
-  #     environment: zion-production
-  #     server_path: /var/www/html/zion.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
-  #     tag_name: ${{ inputs.tag_name }}
-  #     write_version_file: true
-  #     delete: ${{ inputs.aws_delete }}
-  #   secrets:
-  #     SSH_PRIVATE_KEY: ${{ secrets.ZION_PROD_SSH_KEY }}
-  #     SSH_PORT: ${{ secrets.ZION_PROD_SSH_PORT }}
-  #     SSH_USER: ${{ secrets.ZION_PROD_SSH_USER }}
-  #     SSH_HOST: ${{ secrets.ZION_PROD_SSH_HOST }}
+  deploy-zion-production:
+    if: inputs.deploy_zion
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: zion-production
+      server_path: /var/www/html/zion.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.ZION_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.ZION_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.ZION_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.ZION_PROD_SSH_HOST }}
 
   # WP Engine Production - COMMENTED OUT FOR INITIAL TESTING
   deploy-wp-engine-production:
