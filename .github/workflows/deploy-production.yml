@@ -91,7 +91,7 @@ jobs:
     uses: ./.github/workflows/deploy-aws.yml
     with:
       environment: cap-reef-production
-      server_path: /var/www/html/capreef.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      server_path: /var/www/html/capitolreef.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
       tag_name: ${{ inputs.tag_name }}
       write_version_file: true
       delete: ${{ inputs.aws_delete }}
