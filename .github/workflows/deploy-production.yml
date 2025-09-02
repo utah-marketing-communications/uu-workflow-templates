@@ -70,20 +70,20 @@ jobs:
       SSH_HOST: ${{ secrets.AUX_PROD_SSH_HOST }}
 
   # BRYCE Production - COMMENTED OUT FOR INITIAL TESTING
-  # deploy-bryce-production:
-  #   if: inputs.deploy_bryce
-  #   uses: ./.github/workflows/deploy-aws.yml
-  #   with:
-  #     environment: bryce-production
-  #     server_path: /var/www/html/bryce.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
-  #     tag_name: ${{ inputs.tag_name }}
-  #     write_version_file: true
-  #     delete: ${{ inputs.aws_delete }}
-  #   secrets:
-  #     SSH_PRIVATE_KEY: ${{ secrets.BRYCE_PROD_SSH_KEY }}
-  #     SSH_PORT: ${{ secrets.BRYCE_PROD_SSH_PORT }}
-  #     SSH_USER: ${{ secrets.BRYCE_PROD_SSH_USER }}
-  #     SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
+  deploy-bryce-production:
+    if: inputs.deploy_bryce
+    uses: ./.github/workflows/deploy-aws.yml
+    with:
+      environment: bryce-production
+      server_path: /var/www/html/bryce.umc.utah.edu/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}
+      tag_name: ${{ inputs.tag_name }}
+      write_version_file: true
+      delete: ${{ inputs.aws_delete }}
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.BRYCE_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.BRYCE_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
 
   # CAP REEF Production - COMMENTED OUT FOR INITIAL TESTING
   # deploy-cap-reef-production:
