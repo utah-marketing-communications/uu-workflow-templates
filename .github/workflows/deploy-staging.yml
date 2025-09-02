@@ -42,7 +42,7 @@ on:
       wp_delete:
         description: 'Include --delete flag in WP Engine deployments'
         type: boolean
-        default: true
+        default: false
       wp_cache_clear:
         description: 'Clear WP Engine cache after deploy'
         type: boolean
