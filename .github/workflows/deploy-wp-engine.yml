@@ -93,26 +93,7 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.tag_name || 'main' }}
 
-      - name: Create rsync exclusions for WP Engine
-        run: |
-          # Create exclusions file based on .rsyncignore if it exists, otherwise use defaults
-          if [ -f ".rsyncignore" ]; then
-            # Convert .rsyncignore to rsync --exclude flags
-            echo "Creating rsync exclusions from .rsyncignore..."
-            excludes=""
-            while IFS= read -r line; do
-              # Skip comments and empty lines
-              if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ -n "$line" ]]; then
-                excludes="$excludes --exclude=\"$line\""
-              fi
-            done < .rsyncignore
-            echo "EXCLUDE_FLAGS=$excludes" >> $GITHUB_ENV
-            echo "Debug: Exclude flags created: $excludes"
-          else
-            # Default exclusions if no .rsyncignore exists
-            echo "EXCLUDE_FLAGS=--exclude=\".git/\" --exclude=\".github/\" --exclude=\"node_modules/\" --exclude=\"package.json\" --exclude=\"package-lock.json\" --exclude=\"README.md\" --exclude=\"CHANGELOG.md\" --exclude=\".releaserc.json\" --exclude=\"update-version-number.js\" --exclude=\"*.log\" --exclude=\".DS_Store\" --exclude=\"*.md\"" >> $GITHUB_ENV
-            echo "Debug: Using default exclude flags"
-          fi
+
 
       - name: Ensure plugin directory exists
         run: |
@@ -130,12 +111,39 @@ jobs:
           REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/
           PHP_LINT: true
           CACHE_CLEAR: ${{ inputs.cache_clear }}
-          FLAGS: -azvr ${{ inputs.delete && '--delete' || '--inplace' }} --exclude=".*" ${{ env.EXCLUDE_FLAGS }} ${{ inputs.dry_run && '--dry-run' || '' }}
+          FLAGS: -azvr ${{ inputs.delete && '--delete' || '--inplace' }} --exclude=".*" --exclude=".git/" --exclude=".github/" --exclude="node_modules/" --exclude="package.json" --exclude="package-lock.json" --exclude="README.md" --exclude="CHANGELOG.md" --exclude=".releaserc.json" --exclude="update-version-number.js" --exclude=".gitignore" --exclude=".rsyncignore" --exclude="*.log" --exclude=".DS_Store" --exclude="*.md" ${{ inputs.dry_run && '--dry-run' || '' }}
         continue-on-error: true
 
 
 
 
+
+      - name: Clean up unwanted files (if delete is enabled)
+        if: inputs.delete
+        run: |
+          echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
+          chmod 600 $HOME/wpe_key
+          
+          echo "Cleaning up unwanted files from WP Engine..."
+          
+          # Remove specific files and directories that should not be on the server
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
+            "rm -rf sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/.git && \
+             rm -rf sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/.github && \
+             rm -rf sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/node_modules && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/package.json && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/package-lock.json && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/README.md && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/CHANGELOG.md && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/.releaserc.json && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/update-version-number.js && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/.gitignore && \
+             rm -f sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/.rsyncignore && \
+             find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -name '*.log' -delete && \
+             find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -name '.DS_Store' -delete && \
+             find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -name '*.md' -delete" 2>/dev/null || true
+          
+          echo "Cleanup completed."
 
       - name: Adjust permissions on deployed files
         run: |
