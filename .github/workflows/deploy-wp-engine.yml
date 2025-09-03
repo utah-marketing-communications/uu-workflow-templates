@@ -107,9 +107,11 @@ jobs:
               fi
             done < .rsyncignore
             echo "EXCLUDE_FLAGS=$excludes" >> $GITHUB_ENV
+            echo "Debug: Exclude flags created: $excludes"
           else
             # Default exclusions if no .rsyncignore exists
             echo "EXCLUDE_FLAGS=--exclude=\".git/\" --exclude=\".github/\" --exclude=\"node_modules/\" --exclude=\"package.json\" --exclude=\"package-lock.json\" --exclude=\"README.md\" --exclude=\"CHANGELOG.md\" --exclude=\".releaserc.json\" --exclude=\"update-version-number.js\" --exclude=\"*.log\" --exclude=\".DS_Store\" --exclude=\"*.md\"" >> $GITHUB_ENV
+            echo "Debug: Using default exclude flags"
           fi
 
       - name: Ensure plugin directory exists
@@ -128,8 +130,56 @@ jobs:
           REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/
           PHP_LINT: true
           CACHE_CLEAR: ${{ inputs.cache_clear }}
-          FLAGS: -azvr --inplace --exclude=".*" ${{ env.EXCLUDE_FLAGS }} ${{ inputs.delete && '--delete' || '' }} ${{ inputs.dry_run && '--dry-run' || '' }}
+          FLAGS: -azvr ${{ inputs.delete && '--delete' || '--inplace' }} --exclude=".*" ${{ env.EXCLUDE_FLAGS }} ${{ inputs.dry_run && '--dry-run' || '' }}
         continue-on-error: true
+
+
+
+      - name: Clean up unwanted files (if delete is enabled)
+        if: inputs.delete
+        run: |
+          echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
+          chmod 600 $HOME/wpe_key
+          
+          echo "Cleaning up unwanted files from WP Engine..."
+          
+          # List of files/directories to remove (based on .rsyncignore)
+          files_to_remove=(
+            ".git"
+            ".github"
+            "node_modules"
+            "package.json"
+            "package-lock.json"
+            "README.md"
+            "CHANGELOG.md"
+            ".releaserc.json"
+            "update-version-number.js"
+            "*.log"
+            ".DS_Store"
+            "*.md"
+            ".vscode"
+            ".idea"
+            "*.swp"
+            "*.swo"
+            "*.map"
+            "dist"
+            "build"
+            "tests"
+            "test"
+            "*.test.js"
+            "*.spec.js"
+            "*.tmp"
+            "*.temp"
+            ".cache"
+          )
+          
+          for file in "${files_to_remove[@]}"; do
+            echo "Removing: $file"
+            ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
+              "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -name '$file' -exec rm -rf {} +" 2>/dev/null || true
+          done
+          
+          echo "Cleanup completed."
 
       - name: Adjust permissions on deployed files
         run: |
