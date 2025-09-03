@@ -135,51 +135,7 @@ jobs:
 
 
 
-      - name: Clean up unwanted files (if delete is enabled)
-        if: inputs.delete
-        run: |
-          echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
-          chmod 600 $HOME/wpe_key
-          
-          echo "Cleaning up unwanted files from WP Engine..."
-          
-          # List of files/directories to remove (based on .rsyncignore)
-          files_to_remove=(
-            ".git"
-            ".github"
-            "node_modules"
-            "package.json"
-            "package-lock.json"
-            "README.md"
-            "CHANGELOG.md"
-            ".releaserc.json"
-            "update-version-number.js"
-            "*.log"
-            ".DS_Store"
-            "*.md"
-            ".vscode"
-            ".idea"
-            "*.swp"
-            "*.swo"
-            "*.map"
-            "dist"
-            "build"
-            "tests"
-            "test"
-            "*.test.js"
-            "*.spec.js"
-            "*.tmp"
-            "*.temp"
-            ".cache"
-          )
-          
-          for file in "${files_to_remove[@]}"; do
-            echo "Removing: $file"
-            ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-              "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -name '$file' -exec rm -rf {} +" 2>/dev/null || true
-          done
-          
-          echo "Cleanup completed."
+
 
       - name: Adjust permissions on deployed files
         run: |
