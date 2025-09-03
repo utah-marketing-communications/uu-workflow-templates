@@ -93,6 +93,25 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.tag_name || 'main' }}
 
+      - name: Create rsync exclusions for WP Engine
+        run: |
+          # Create exclusions file based on .rsyncignore if it exists, otherwise use defaults
+          if [ -f ".rsyncignore" ]; then
+            # Convert .rsyncignore to rsync --exclude flags
+            echo "Creating rsync exclusions from .rsyncignore..."
+            excludes=""
+            while IFS= read -r line; do
+              # Skip comments and empty lines
+              if [[ ! "$line" =~ ^[[:space:]]*# ]] && [[ -n "$line" ]]; then
+                excludes="$excludes --exclude=\"$line\""
+              fi
+            done < .rsyncignore
+            echo "EXCLUDE_FLAGS=$excludes" >> $GITHUB_ENV
+          else
+            # Default exclusions if no .rsyncignore exists
+            echo "EXCLUDE_FLAGS=--exclude=\".git/\" --exclude=\".github/\" --exclude=\"node_modules/\" --exclude=\"package.json\" --exclude=\"package-lock.json\" --exclude=\"README.md\" --exclude=\"CHANGELOG.md\" --exclude=\".releaserc.json\" --exclude=\"update-version-number.js\" --exclude=\"*.log\" --exclude=\".DS_Store\" --exclude=\"*.md\"" >> $GITHUB_ENV
+          fi
+
       - name: Ensure plugin directory exists
         run: |
           echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
@@ -109,7 +128,7 @@ jobs:
           REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/
           PHP_LINT: true
           CACHE_CLEAR: ${{ inputs.cache_clear }}
-          FLAGS: -azvr --inplace --exclude=".*" ${{ inputs.delete && '--delete' || '' }} ${{ inputs.dry_run && '--dry-run' || '' }}
+          FLAGS: -azvr --inplace --exclude=".*" ${{ env.EXCLUDE_FLAGS }} ${{ inputs.delete && '--delete' || '' }} ${{ inputs.dry_run && '--dry-run' || '' }}
         continue-on-error: true
 
       - name: Adjust permissions on deployed files
