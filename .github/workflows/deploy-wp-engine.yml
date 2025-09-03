@@ -3,6 +3,10 @@ name: Reusable WP Engine Deployment
 on:
   workflow_call:
     inputs:
+      widget_name:
+        description: 'Widget name to deploy'
+        required: true
+        type: string
       environment_type:
         description: 'Environment type (staging or production)'
         required: true
@@ -94,7 +98,7 @@ jobs:
           echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
           chmod 600 $HOME/wpe_key
           ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "mkdir -p sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget"
+            "mkdir -p sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}"
 
       - name: Deploy to WP Engine
         uses: wpengine/github-action-wpe-site-deploy@v3
@@ -102,7 +106,7 @@ jobs:
           WPE_ENV: ${{ matrix.env }}
           WPE_SSHG_KEY_PRIVATE: ${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}
           SRC_PATH: ./
-          REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget/
+          REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/
           PHP_LINT: true
           CACHE_CLEAR: ${{ inputs.cache_clear }}
           FLAGS: -azvr --inplace --exclude=".*" ${{ inputs.delete && '--delete' || '' }} ${{ inputs.dry_run && '--dry-run' || '' }}
@@ -111,8 +115,8 @@ jobs:
       - name: Adjust permissions on deployed files
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget -type d -exec chmod 775 {} +; \
-             find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/uu-accordion-widget -type f -exec chmod 664 {} +"
+            "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -type d -exec chmod 775 {} +; \
+             find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -type f -exec chmod 664 {} +"
 
       - name: Log Deployment Summary
         run: |
