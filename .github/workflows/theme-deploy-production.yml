@@ -1,0 +1,186 @@
+name: Deploy Theme to Production Environments
+
+on:
+  workflow_call:
+    inputs:
+      theme_name:
+        description: 'Theme name (e.g., umctheme3-asia-campus)'
+        required: true
+        type: string
+      tag_name:
+        description: 'Tag to deploy (e.g., v1.0.0, latest)'
+        required: true
+        type: string
+      # AWS Environment selection - Individual checkboxes for each environment
+      deploy_aux_prod:
+        description: 'Deploy to AUX Production'
+        type: boolean
+        default: false
+      deploy_aux_stage:
+        description: 'Deploy to AUX Staging'
+        type: boolean
+        default: false
+      deploy_bryce_prod:
+        description: 'Deploy to Bryce Production'
+        type: boolean
+        default: false
+      deploy_bryce_stage:
+        description: 'Deploy to Bryce Staging'
+        type: boolean
+        default: false
+      deploy_cap_reef_prod:
+        description: 'Deploy to Capitol Reef Production'
+        type: boolean
+        default: false
+      deploy_cap_reef_stage:
+        description: 'Deploy to Capitol Reef Staging'
+        type: boolean
+        default: false
+      deploy_zion_prod:
+        description: 'Deploy to Zion Production'
+        type: boolean
+        default: false
+      deploy_zion_stage:
+        description: 'Deploy to Zion Staging'
+        type: boolean
+        default: false
+      # WP Engine settings
+      wp_engine_site:
+        description: 'WP Engine site name (leave empty to skip WP Engine deployment)'
+        type: string
+        default: ''
+      # Safety settings
+      dry_run:
+        description: 'Run deployment in dry run mode (no actual deployment)'
+        type: boolean
+        default: false
+      include_delete_flag:
+        description: 'Include --delete flag in deployments (removes files not in source)'
+        type: boolean
+        default: false
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      WPE_ORG_SSHG_KEY_PRIVATE:
+        required: true
+
+jobs:
+  # AUX Production
+  deploy-aux-production:
+    if: inputs.deploy_aux_prod
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: aux-production
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+  # AUX Staging
+  deploy-aux-staging:
+    if: inputs.deploy_aux_stage
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: aux-staging
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # BRYCE Production
+  deploy-bryce-production:
+    if: inputs.deploy_bryce_prod
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: bryce-production
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+  # BRYCE Staging
+  deploy-bryce-staging:
+    if: inputs.deploy_bryce_stage
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: bryce-staging
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # CAP REEF Production
+  deploy-cap-reef-production:
+    if: inputs.deploy_cap_reef_prod
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: capitol-reef-production
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+  # CAP REEF Staging
+  deploy-cap-reef-staging:
+    if: inputs.deploy_cap_reef_stage
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: capitol-reef-staging
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # ZION Production
+  deploy-zion-production:
+    if: inputs.deploy_zion_prod
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: zion-production
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+  # ZION Staging
+  deploy-zion-staging:
+    if: inputs.deploy_zion_stage
+    uses: ./.github/workflows/theme-deploy-aws.yml
+    with:
+      environment: zion-staging
+      theme_name: ${{ inputs.theme_name }}
+      tag_name: ${{ inputs.tag_name }}
+      delete: ${{ inputs.include_delete_flag }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+  # WP Engine Production
+  deploy-wp-engine-production:
+    if: inputs.wp_engine_site != '' && inputs.wp_engine_site != null
+    uses: ./.github/workflows/theme-deploy-wpengine.yml
+    with:
+      theme_name: ${{ inputs.theme_name }}
+      environment_type: production
+      tag_name: ${{ inputs.tag_name }}
+      dry_run: ${{ inputs.dry_run }}
+      delete: ${{ inputs.include_delete_flag }}
+      cache_clear: false
+    secrets:
+      WPE_ORG_SSHG_KEY_PRIVATE: ${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}

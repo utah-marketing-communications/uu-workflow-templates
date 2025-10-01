@@ -1,0 +1,150 @@
+name: Reusable Theme AWS Deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment name (e.g., aux-staging, bryce-production)'
+        required: true
+        type: string
+      theme_name:
+        description: 'Theme name (e.g., umctheme3-asia-campus)'
+        required: true
+        type: string
+      tag_name:
+        description: 'Tag name to deploy'
+        required: true
+        type: string
+      delete:
+        description: 'Delete files on the server that are not in the local directory'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        description: 'AWS Access Key ID'
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        description: 'AWS Secret Access Key'
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy Theme to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ inputs.tag_name }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        if [ -f package.json ]; then
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+        else
+          echo "No package.json found, skipping dependency installation"
+        fi
+        
+    - name: Build theme
+      run: |
+        if [ -f package.json ] && npm run | grep -q "build"; then
+          echo "Building theme..."
+          npm run build
+        else
+          echo "No build process configured"
+        fi
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Deploy theme to AWS S3
+      run: |
+        echo "🚀 Deploying ${{ inputs.theme_name }} to AWS ${{ inputs.environment }}..."
+        
+        # Determine S3 bucket based on environment
+        case "${{ inputs.environment }}" in
+          "aux-production")
+            S3_BUCKET="aux-production-bucket"
+            ;;
+          "aux-staging")
+            S3_BUCKET="aux-staging-bucket"
+            ;;
+          "bryce-production")
+            S3_BUCKET="bryce-production-bucket"
+            ;;
+          "bryce-staging")
+            S3_BUCKET="bryce-staging-bucket"
+            ;;
+          "capitol-reef-production")
+            S3_BUCKET="capitol-reef-production-bucket"
+            ;;
+          "capitol-reef-staging")
+            S3_BUCKET="capitol-reef-staging-bucket"
+            ;;
+          "zion-production")
+            S3_BUCKET="zion-production-bucket"
+            ;;
+          "zion-staging")
+            S3_BUCKET="zion-staging-bucket"
+            ;;
+          *)
+            echo "❌ Unknown environment: ${{ inputs.environment }}"
+            exit 1
+            ;;
+        esac
+        
+        # Set up delete flag
+        DELETE_FLAG=""
+        if [ "${{ inputs.delete }}" == "true" ]; then
+          DELETE_FLAG="--delete"
+          echo "⚠️  Delete flag enabled - will remove files not in source"
+        fi
+        
+        # Deploy theme files to S3
+        echo "📦 Syncing theme files to S3 bucket: $S3_BUCKET"
+        aws s3 sync . s3://$S3_BUCKET/wp-content/themes/${{ inputs.theme_name }}/ $DELETE_FLAG \
+          --exclude=".*" \
+          --exclude=".git/*" \
+          --exclude=".github/*" \
+          --exclude="node_modules/*" \
+          --exclude="package.json" \
+          --exclude="package-lock.json" \
+          --exclude="README.md" \
+          --exclude="CHANGELOG.md" \
+          --exclude=".releaserc.json" \
+          --exclude=".gitignore" \
+          --exclude="*.log" \
+          --exclude=".DS_Store" \
+          --exclude="*.md"
+        
+        echo "✅ Theme ${{ inputs.theme_name }} deployed successfully to ${{ inputs.environment }}"
+
+    - name: Deployment Summary
+      run: |
+        echo "🎉 AWS Theme Deployment Summary"
+        echo "==============================="
+        echo "Theme: ${{ inputs.theme_name }}"
+        echo "Environment: ${{ inputs.environment }}"
+        echo "Tag: ${{ inputs.tag_name }}"
+        echo "Delete Flag: ${{ inputs.delete }}"
+        echo "✅ AWS theme deployment completed successfully!"
