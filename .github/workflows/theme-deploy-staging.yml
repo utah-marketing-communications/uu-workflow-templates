@@ -11,37 +11,21 @@ on:
         description: 'Tag to deploy (e.g., v1.0.0, latest)'
         required: true
         type: string
-      # AWS Environment selection - Individual checkboxes for each environment
-      deploy_aux_prod:
-        description: 'Deploy to AUX Production'
+      # AWS Environment selection - Staging environments only
+      deploy_aux:
+        description: 'Deploy to AUX staging'
         type: boolean
         default: false
-      deploy_aux_stage:
-        description: 'Deploy to AUX Staging'
+      deploy_bryce:
+        description: 'Deploy to BRYCE staging'
         type: boolean
         default: false
-      deploy_bryce_prod:
-        description: 'Deploy to Bryce Production'
+      deploy_cap_reef:
+        description: 'Deploy to CAP REEF staging'
         type: boolean
         default: false
-      deploy_bryce_stage:
-        description: 'Deploy to Bryce Staging'
-        type: boolean
-        default: false
-      deploy_cap_reef_prod:
-        description: 'Deploy to Capitol Reef Production'
-        type: boolean
-        default: false
-      deploy_cap_reef_stage:
-        description: 'Deploy to Capitol Reef Staging'
-        type: boolean
-        default: false
-      deploy_zion_prod:
-        description: 'Deploy to Zion Production'
-        type: boolean
-        default: false
-      deploy_zion_stage:
-        description: 'Deploy to Zion Staging'
+      deploy_zion:
+        description: 'Deploy to ZION staging'
         type: boolean
         default: false
       # WP Engine settings
@@ -59,97 +43,50 @@ on:
         type: boolean
         default: false
     secrets:
-      # AUX secrets
-      AUX_PROD_SSH_KEY:
+      # AUX Staging secrets
+      AUX_STG_SSH_PRIVATE_KEY:
         required: true
-      AUX_PROD_SSH_PORT:
+      AUX_STG_SSH_PORT:
         required: true
-      AUX_PROD_SSH_USER:
+      AUX_STG_SSH_USER:
         required: true
-      AUX_PROD_SSH_HOST:
+      AUX_STG_SSH_HOST:
         required: true
-      AUX_STAGE_SSH_KEY:
+      # BRYCE Staging secrets
+      BRYCE_STG_SSH_PRIVATE_KEY:
         required: true
-      AUX_STAGE_SSH_PORT:
+      BRYCE_STG_SSH_PORT:
         required: true
-      AUX_STAGE_SSH_USER:
+      BRYCE_STG_SSH_USER:
         required: true
-      AUX_STAGE_SSH_HOST:
+      BRYCE_STG_SSH_HOST:
         required: true
-      # BRYCE secrets
-      BRYCE_PROD_SSH_KEY:
+      # CAP REEF Staging secrets
+      CAP_REEF_STG_SSH_PRIVATE_KEY:
         required: true
-      BRYCE_PROD_SSH_PORT:
+      CAP_REEF_STG_SSH_PORT:
         required: true
-      BRYCE_PROD_SSH_USER:
+      CAP_REEF_STG_SSH_USER:
         required: true
-      BRYCE_PROD_SSH_HOST:
+      CAP_REEF_STG_SSH_HOST:
         required: true
-      BRYCE_STAGE_SSH_KEY:
+      # ZION Staging secrets
+      ZION_STG_SSH_PRIVATE_KEY:
         required: true
-      BRYCE_STAGE_SSH_PORT:
+      ZION_STG_SSH_PORT:
         required: true
-      BRYCE_STAGE_SSH_USER:
+      ZION_STG_SSH_USER:
         required: true
-      BRYCE_STAGE_SSH_HOST:
-        required: true
-      # CAP REEF secrets
-      CAP_REEF_PROD_SSH_KEY:
-        required: true
-      CAP_REEF_PROD_SSH_PORT:
-        required: true
-      CAP_REEF_PROD_SSH_USER:
-        required: true
-      CAP_REEF_PROD_SSH_HOST:
-        required: true
-      CAP_REEF_STAGE_SSH_KEY:
-        required: true
-      CAP_REEF_STAGE_SSH_PORT:
-        required: true
-      CAP_REEF_STAGE_SSH_USER:
-        required: true
-      CAP_REEF_STAGE_SSH_HOST:
-        required: true
-      # ZION secrets
-      ZION_PROD_SSH_KEY:
-        required: true
-      ZION_PROD_SSH_PORT:
-        required: true
-      ZION_PROD_SSH_USER:
-        required: true
-      ZION_PROD_SSH_HOST:
-        required: true
-      ZION_STAGE_SSH_KEY:
-        required: true
-      ZION_STAGE_SSH_PORT:
-        required: true
-      ZION_STAGE_SSH_USER:
-        required: true
-      ZION_STAGE_SSH_HOST:
+      ZION_STG_SSH_HOST:
         required: true
       # WP Engine secret
       WPE_ORG_SSHG_KEY_PRIVATE:
         required: true
 
 jobs:
-  # AUX Production
-  deploy-aux-production:
-    if: inputs.deploy_aux_prod
-    uses: ./.github/workflows/theme-deploy-aws.yml
-    with:
-      environment: aux-production
-      theme_name: ${{ inputs.theme_name }}
-      tag_name: ${{ inputs.tag_name }}
-      delete: ${{ inputs.include_delete_flag }}
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.AUX_PROD_SSH_KEY }}
-      SSH_PORT: ${{ secrets.AUX_PROD_SSH_PORT }}
-      SSH_USER: ${{ secrets.AUX_PROD_SSH_USER }}
-      SSH_HOST: ${{ secrets.AUX_PROD_SSH_HOST }}
-        
   # AUX Staging
   deploy-aux-staging:
-    if: inputs.deploy_aux_stage
+    if: inputs.deploy_aux
     uses: ./.github/workflows/theme-deploy-aws.yml
     with:
       environment: aux-staging
@@ -157,29 +94,14 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.AUX_STAGE_SSH_KEY }}
-      SSH_PORT: ${{ secrets.AUX_STAGE_SSH_PORT }}
-      SSH_USER: ${{ secrets.AUX_STAGE_SSH_USER }}
-      SSH_HOST: ${{ secrets.AUX_STAGE_SSH_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.AUX_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.AUX_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.AUX_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.AUX_STG_SSH_HOST }}
 
-  # BRYCE Production
-  deploy-bryce-production:
-    if: inputs.deploy_bryce_prod
-    uses: ./.github/workflows/theme-deploy-aws.yml
-    with:
-      environment: bryce-production
-      theme_name: ${{ inputs.theme_name }}
-      tag_name: ${{ inputs.tag_name }}
-      delete: ${{ inputs.include_delete_flag }}
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_PROD_SSH_KEY }}
-      SSH_PORT: ${{ secrets.BRYCE_PROD_SSH_PORT }}
-      SSH_USER: ${{ secrets.BRYCE_PROD_SSH_USER }}
-      SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
-        
   # BRYCE Staging
   deploy-bryce-staging:
-    if: inputs.deploy_bryce_stage
+    if: inputs.deploy_bryce
     uses: ./.github/workflows/theme-deploy-aws.yml
     with:
       environment: bryce-staging
@@ -187,29 +109,14 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_STAGE_SSH_KEY }}
-      SSH_PORT: ${{ secrets.BRYCE_STAGE_SSH_PORT }}
-      SSH_USER: ${{ secrets.BRYCE_STAGE_SSH_USER }}
-      SSH_HOST: ${{ secrets.BRYCE_STAGE_SSH_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.BRYCE_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.BRYCE_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.BRYCE_STG_SSH_HOST }}
 
-  # CAP REEF Production
-  deploy-cap-reef-production:
-    if: inputs.deploy_cap_reef_prod
-    uses: ./.github/workflows/theme-deploy-aws.yml
-    with:
-      environment: capitol-reef-production
-      theme_name: ${{ inputs.theme_name }}
-      tag_name: ${{ inputs.tag_name }}
-      delete: ${{ inputs.include_delete_flag }}
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_PROD_SSH_KEY }}
-      SSH_PORT: ${{ secrets.CAP_REEF_PROD_SSH_PORT }}
-      SSH_USER: ${{ secrets.CAP_REEF_PROD_SSH_USER }}
-      SSH_HOST: ${{ secrets.CAP_REEF_PROD_SSH_HOST }}
-        
   # CAP REEF Staging
   deploy-cap-reef-staging:
-    if: inputs.deploy_cap_reef_stage
+    if: inputs.deploy_cap_reef
     uses: ./.github/workflows/theme-deploy-aws.yml
     with:
       environment: capitol-reef-staging
@@ -217,29 +124,14 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_STAGE_SSH_KEY }}
-      SSH_PORT: ${{ secrets.CAP_REEF_STAGE_SSH_PORT }}
-      SSH_USER: ${{ secrets.CAP_REEF_STAGE_SSH_USER }}
-      SSH_HOST: ${{ secrets.CAP_REEF_STAGE_SSH_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.CAP_REEF_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.CAP_REEF_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.CAP_REEF_STG_SSH_HOST }}
 
-  # ZION Production
-  deploy-zion-production:
-    if: inputs.deploy_zion_prod
-    uses: ./.github/workflows/theme-deploy-aws.yml
-    with:
-      environment: zion-production
-      theme_name: ${{ inputs.theme_name }}
-      tag_name: ${{ inputs.tag_name }}
-      delete: ${{ inputs.include_delete_flag }}
-    secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.ZION_PROD_SSH_KEY }}
-      SSH_PORT: ${{ secrets.ZION_PROD_SSH_PORT }}
-      SSH_USER: ${{ secrets.ZION_PROD_SSH_USER }}
-      SSH_HOST: ${{ secrets.ZION_PROD_SSH_HOST }}
-        
   # ZION Staging
   deploy-zion-staging:
-    if: inputs.deploy_zion_stage
+    if: inputs.deploy_zion
     uses: ./.github/workflows/theme-deploy-aws.yml
     with:
       environment: zion-staging
@@ -247,10 +139,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      SSH_PRIVATE_KEY: ${{ secrets.ZION_STAGE_SSH_KEY }}
-      SSH_PORT: ${{ secrets.ZION_STAGE_SSH_PORT }}
-      SSH_USER: ${{ secrets.ZION_STAGE_SSH_USER }}
-      SSH_HOST: ${{ secrets.ZION_STAGE_SSH_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.ZION_STG_SSH_PRIVATE_KEY }}
+      SSH_PORT: ${{ secrets.ZION_STG_SSH_PORT }}
+      SSH_USER: ${{ secrets.ZION_STG_SSH_USER }}
+      SSH_HOST: ${{ secrets.ZION_STG_SSH_HOST }}
 
   # WP Engine Staging
   deploy-wp-engine-staging:
