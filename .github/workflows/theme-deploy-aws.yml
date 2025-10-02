@@ -21,20 +21,23 @@ on:
         type: boolean
         default: false
     secrets:
-      AWS_ACCESS_KEY_ID:
-        description: 'AWS Access Key ID'
+      SSH_PRIVATE_KEY:
+        description: 'SSH private key for the server'
         required: true
-      AWS_SECRET_ACCESS_KEY:
-        description: 'AWS Secret Access Key'
+      SSH_PORT:
+        description: 'SSH port for the server'
+        required: true
+      SSH_USER:
+        description: 'SSH user for the server'
+        required: true
+      SSH_HOST:
+        description: 'SSH host for the server'
         required: true
 
 jobs:
   deploy:
     name: Deploy Theme to ${{ inputs.environment }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     
     steps:
     - name: Checkout repository
@@ -70,63 +73,27 @@ jobs:
           echo "No build process configured"
         fi
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.9.0
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-west-2
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Deploy theme to AWS S3
+    - name: Log start of deployment
+      run: echo "🚀 Starting theme deployment to ${{ inputs.environment }}..."
+
+    - name: Ensure target directory exists on server
       run: |
-        echo "🚀 Deploying ${{ inputs.theme_name }} to AWS ${{ inputs.environment }}..."
-        
-        # Determine S3 bucket based on environment
-        case "${{ inputs.environment }}" in
-          "aux-production")
-            S3_BUCKET="aux-production-bucket"
-            ;;
-          "aux-staging")
-            S3_BUCKET="aux-staging-bucket"
-            ;;
-          "bryce-production")
-            S3_BUCKET="bryce-production-bucket"
-            ;;
-          "bryce-staging")
-            S3_BUCKET="bryce-staging-bucket"
-            ;;
-          "capitol-reef-production")
-            S3_BUCKET="capitol-reef-production-bucket"
-            ;;
-          "capitol-reef-staging")
-            S3_BUCKET="capitol-reef-staging-bucket"
-            ;;
-          "zion-production")
-            S3_BUCKET="zion-production-bucket"
-            ;;
-          "zion-staging")
-            S3_BUCKET="zion-staging-bucket"
-            ;;
-          *)
-            echo "❌ Unknown environment: ${{ inputs.environment }}"
-            exit 1
-            ;;
-        esac
-        
-        # Set up delete flag
-        DELETE_FLAG=""
-        if [ "${{ inputs.delete }}" == "true" ]; then
-          DELETE_FLAG="--delete"
-          echo "⚠️  Delete flag enabled - will remove files not in source"
-        fi
-        
-        # Deploy theme files to S3
-        echo "📦 Syncing theme files to S3 bucket: $S3_BUCKET"
-        aws s3 sync . s3://$S3_BUCKET/wp-content/themes/${{ inputs.theme_name }}/ $DELETE_FLAG \
+        ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          "mkdir -p /var/www/html/wp-content/themes/${{ inputs.theme_name }}"
+
+    - name: Deploy theme with rsync
+      run: |
+        rsync -avz ${{ inputs.delete && '--delete' || '' }} \
           --exclude=".*" \
-          --exclude=".git/*" \
-          --exclude=".github/*" \
-          --exclude="node_modules/*" \
+          --exclude=".git/" \
+          --exclude=".github/" \
+          --exclude="node_modules/" \
           --exclude="package.json" \
           --exclude="package-lock.json" \
           --exclude="README.md" \
@@ -135,9 +102,16 @@ jobs:
           --exclude=".gitignore" \
           --exclude="*.log" \
           --exclude=".DS_Store" \
-          --exclude="*.md"
-        
-        echo "✅ Theme ${{ inputs.theme_name }} deployed successfully to ${{ inputs.environment }}"
+          --exclude="*.md" \
+          -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}" \
+          ./ \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/wp-content/themes/${{ inputs.theme_name }}/
+
+    - name: Write deployed version file
+      run: |
+        ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          "echo '${{ inputs.tag_name }}' > /var/www/html/wp-content/themes/${{ inputs.theme_name }}/version.txt"
 
     - name: Deployment Summary
       run: |
@@ -147,4 +121,4 @@ jobs:
         echo "Environment: ${{ inputs.environment }}"
         echo "Tag: ${{ inputs.tag_name }}"
         echo "Delete Flag: ${{ inputs.delete }}"
-        echo "✅ AWS theme deployment completed successfully!"
+        echo "✅ Theme deployed successfully to ${{ inputs.environment }}!"

@@ -59,10 +59,75 @@ on:
         type: boolean
         default: false
     secrets:
-      AWS_ACCESS_KEY_ID:
+      # AUX secrets
+      AUX_PROD_SSH_KEY:
         required: true
-      AWS_SECRET_ACCESS_KEY:
+      AUX_PROD_SSH_PORT:
         required: true
+      AUX_PROD_SSH_USER:
+        required: true
+      AUX_PROD_SSH_HOST:
+        required: true
+      AUX_STAGE_SSH_KEY:
+        required: true
+      AUX_STAGE_SSH_PORT:
+        required: true
+      AUX_STAGE_SSH_USER:
+        required: true
+      AUX_STAGE_SSH_HOST:
+        required: true
+      # BRYCE secrets
+      BRYCE_PROD_SSH_KEY:
+        required: true
+      BRYCE_PROD_SSH_PORT:
+        required: true
+      BRYCE_PROD_SSH_USER:
+        required: true
+      BRYCE_PROD_SSH_HOST:
+        required: true
+      BRYCE_STAGE_SSH_KEY:
+        required: true
+      BRYCE_STAGE_SSH_PORT:
+        required: true
+      BRYCE_STAGE_SSH_USER:
+        required: true
+      BRYCE_STAGE_SSH_HOST:
+        required: true
+      # CAP REEF secrets
+      CAP_REEF_PROD_SSH_KEY:
+        required: true
+      CAP_REEF_PROD_SSH_PORT:
+        required: true
+      CAP_REEF_PROD_SSH_USER:
+        required: true
+      CAP_REEF_PROD_SSH_HOST:
+        required: true
+      CAP_REEF_STAGE_SSH_KEY:
+        required: true
+      CAP_REEF_STAGE_SSH_PORT:
+        required: true
+      CAP_REEF_STAGE_SSH_USER:
+        required: true
+      CAP_REEF_STAGE_SSH_HOST:
+        required: true
+      # ZION secrets
+      ZION_PROD_SSH_KEY:
+        required: true
+      ZION_PROD_SSH_PORT:
+        required: true
+      ZION_PROD_SSH_USER:
+        required: true
+      ZION_PROD_SSH_HOST:
+        required: true
+      ZION_STAGE_SSH_KEY:
+        required: true
+      ZION_STAGE_SSH_PORT:
+        required: true
+      ZION_STAGE_SSH_USER:
+        required: true
+      ZION_STAGE_SSH_HOST:
+        required: true
+      # WP Engine secret
       WPE_ORG_SSHG_KEY_PRIVATE:
         required: true
 
@@ -77,8 +142,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.AUX_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.AUX_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.AUX_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.AUX_PROD_SSH_HOST }}
         
   # AUX Staging
   deploy-aux-staging:
@@ -90,8 +157,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.AUX_STAGE_SSH_KEY }}
+      SSH_PORT: ${{ secrets.AUX_STAGE_SSH_PORT }}
+      SSH_USER: ${{ secrets.AUX_STAGE_SSH_USER }}
+      SSH_HOST: ${{ secrets.AUX_STAGE_SSH_HOST }}
 
   # BRYCE Production
   deploy-bryce-production:
@@ -103,8 +172,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.BRYCE_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.BRYCE_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.BRYCE_PROD_SSH_HOST }}
         
   # BRYCE Staging
   deploy-bryce-staging:
@@ -116,8 +187,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.BRYCE_STAGE_SSH_KEY }}
+      SSH_PORT: ${{ secrets.BRYCE_STAGE_SSH_PORT }}
+      SSH_USER: ${{ secrets.BRYCE_STAGE_SSH_USER }}
+      SSH_HOST: ${{ secrets.BRYCE_STAGE_SSH_HOST }}
 
   # CAP REEF Production
   deploy-cap-reef-production:
@@ -129,8 +202,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.CAP_REEF_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.CAP_REEF_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.CAP_REEF_PROD_SSH_HOST }}
         
   # CAP REEF Staging
   deploy-cap-reef-staging:
@@ -142,8 +217,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.CAP_REEF_STAGE_SSH_KEY }}
+      SSH_PORT: ${{ secrets.CAP_REEF_STAGE_SSH_PORT }}
+      SSH_USER: ${{ secrets.CAP_REEF_STAGE_SSH_USER }}
+      SSH_HOST: ${{ secrets.CAP_REEF_STAGE_SSH_HOST }}
 
   # ZION Production
   deploy-zion-production:
@@ -155,8 +232,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.ZION_PROD_SSH_KEY }}
+      SSH_PORT: ${{ secrets.ZION_PROD_SSH_PORT }}
+      SSH_USER: ${{ secrets.ZION_PROD_SSH_USER }}
+      SSH_HOST: ${{ secrets.ZION_PROD_SSH_HOST }}
         
   # ZION Staging
   deploy-zion-staging:
@@ -168,8 +247,10 @@ jobs:
       tag_name: ${{ inputs.tag_name }}
       delete: ${{ inputs.include_delete_flag }}
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SSH_PRIVATE_KEY: ${{ secrets.ZION_STAGE_SSH_KEY }}
+      SSH_PORT: ${{ secrets.ZION_STAGE_SSH_PORT }}
+      SSH_USER: ${{ secrets.ZION_STAGE_SSH_USER }}
+      SSH_HOST: ${{ secrets.ZION_STAGE_SSH_HOST }}
 
   # WP Engine Staging
   deploy-wp-engine-staging:
