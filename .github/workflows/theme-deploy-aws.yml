@@ -77,6 +77,31 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
+    - name: Determine WordPress path based on environment
+      id: wp_path
+      run: |
+        # Map environment to domain-specific WordPress path
+        case "${{ inputs.environment }}" in
+          aux-staging|aux-production)
+            WP_PATH="/var/www/html/aux.umc.utah.edu/wp-content/themes"
+            ;;
+          bryce-staging|bryce-production)
+            WP_PATH="/var/www/html/bryce.umc.utah.edu/wp-content/themes"
+            ;;
+          capitol-reef-staging|capitol-reef-production)
+            WP_PATH="/var/www/html/capitolreef.umc.utah.edu/wp-content/themes"
+            ;;
+          zion-staging|zion-production)
+            WP_PATH="/var/www/html/zion.umc.utah.edu/wp-content/themes"
+            ;;
+          *)
+            echo "❌ ERROR: Unknown environment '${{ inputs.environment }}'"
+            exit 1
+            ;;
+        esac
+        echo "wp_path=${WP_PATH}" >> $GITHUB_OUTPUT
+        echo "🗺️ WordPress path for ${{ inputs.environment }}: ${WP_PATH}"
+
     - name: Log start of deployment
       run: echo "🚀 Starting theme deployment to ${{ inputs.environment }}..."
 
@@ -84,19 +109,19 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
           ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-          "if [ ! -d '/var/www/html/wp-content/themes' ]; then \
-            echo '❌ ERROR: WordPress themes directory not found at /var/www/html/wp-content/themes'; \
+          "if [ ! -d '${{ steps.wp_path.outputs.wp_path }}' ]; then \
+            echo '❌ ERROR: WordPress themes directory not found at ${{ steps.wp_path.outputs.wp_path }}'; \
             echo 'This deployment requires a valid WordPress installation.'; \
             exit 1; \
           else \
-            echo '✅ WordPress themes directory confirmed at /var/www/html/wp-content/themes'; \
+            echo '✅ WordPress themes directory confirmed at ${{ steps.wp_path.outputs.wp_path }}'; \
           fi"
     
     - name: Create theme directory if needed
       run: |
         ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
           ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-          "cd /var/www/html/wp-content/themes && mkdir -p ${{ inputs.theme_name }} && echo '✅ Theme directory ready: /var/www/html/wp-content/themes/${{ inputs.theme_name }}'"
+          "cd ${{ steps.wp_path.outputs.wp_path }} && mkdir -p ${{ inputs.theme_name }} && echo '✅ Theme directory ready: ${{ steps.wp_path.outputs.wp_path }}/${{ inputs.theme_name }}'"
 
     - name: Deploy theme with rsync
       run: |
@@ -116,13 +141,13 @@ jobs:
           --exclude="*.md" \
           -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}" \
           ./ \
-          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/html/wp-content/themes/${{ inputs.theme_name }}/
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ steps.wp_path.outputs.wp_path }}/${{ inputs.theme_name }}/
 
     - name: Write deployed version file
       run: |
         ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
           ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-          "echo '${{ inputs.tag_name }}' > /var/www/html/wp-content/themes/${{ inputs.theme_name }}/version.txt"
+          "echo '${{ inputs.tag_name }}' > ${{ steps.wp_path.outputs.wp_path }}/${{ inputs.theme_name }}/version.txt"
 
     - name: Deployment Summary
       run: |
