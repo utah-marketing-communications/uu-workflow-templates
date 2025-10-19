@@ -80,11 +80,23 @@ jobs:
     - name: Log start of deployment
       run: echo "🚀 Starting theme deployment to ${{ inputs.environment }}..."
 
-    - name: Ensure target directory exists on server
+    - name: Verify WordPress themes directory exists
       run: |
         ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
           ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-          "mkdir -p /var/www/html/wp-content/themes/${{ inputs.theme_name }}"
+          "if [ ! -d '/var/www/html/wp-content/themes' ]; then \
+            echo '❌ ERROR: WordPress themes directory not found at /var/www/html/wp-content/themes'; \
+            echo 'This deployment requires a valid WordPress installation.'; \
+            exit 1; \
+          else \
+            echo '✅ WordPress themes directory confirmed at /var/www/html/wp-content/themes'; \
+          fi"
+    
+    - name: Create theme directory if needed
+      run: |
+        ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          "cd /var/www/html/wp-content/themes && mkdir -p ${{ inputs.theme_name }} && echo '✅ Theme directory ready: /var/www/html/wp-content/themes/${{ inputs.theme_name }}'"
 
     - name: Deploy theme with rsync
       run: |
