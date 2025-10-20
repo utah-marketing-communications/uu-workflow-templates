@@ -11,17 +11,21 @@ on:
         description: 'Environment type (staging or production)'
         required: true
         type: string
+      wp_engine_site:
+        description: 'Specific WP Engine site name to deploy to'
+        required: false
+        type: string
       tag_name:
-        description: 'Tag name to deploy (for production)'
+        description: 'Tag name to deploy'
         required: false
         type: string
       dry_run:
-        description: 'Run deployment in dry run mode (production only)'
+        description: 'Run deployment in dry run mode'
         required: false
         type: boolean
         default: false
       delete:
-        description: 'Include --delete flag in deployment (production only)'
+        description: 'Include --delete flag in deployment'
         required: false
         type: boolean
         default: true
@@ -36,45 +40,19 @@ on:
         required: true
 
 jobs:
-  fetch-installs:
-    runs-on: ubuntu-latest
-    outputs:
-      envs: ${{ steps.extract.outputs.envs }}
-    steps:
-      - name: Fetch installs from WP Engine API
-        id: fetch
-        run: |
-          # For themes, we'll use a simpler approach - deploy to all environments
-          # This could be enhanced to use WP Engine API if needed
-          echo "Fetching WP Engine environments for theme deployment..."
-          
-          # For now, we'll use a hardcoded list or environment variable
-          # This can be made dynamic by using WP Engine API in the future
-          if [ "${{ inputs.environment_type }}" = "production" ]; then
-            envs='["production-site-1", "production-site-2"]'
-          else
-            envs='["staging-site-1", "staging-site-2"]'
-          fi
-          
-          echo "envs=$envs" >> $GITHUB_OUTPUT
-          echo "Found environments: $envs"
-
   deploy:
-    needs: fetch-installs
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: ${{ fromJson(needs.fetch-installs.outputs.envs) }}
-      max-parallel: 3
+    # Only run if a site name was provided
+    if: inputs.wp_engine_site != '' && inputs.wp_engine_site != null
     steps:
       - name: Test SSH access before deployment
         run: |
           echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
           chmod 600 $HOME/wpe_key
-          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net "echo 'SSH access confirmed'" 2>/dev/null; then
-            echo "✅ SSH access confirmed for ${{ matrix.env }}"
+          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i $HOME/wpe_key wpe_gha+${{ inputs.wp_engine_site }}@${{ inputs.wp_engine_site }}.ssh.wpengine.net "echo 'SSH access confirmed'" 2>/dev/null; then
+            echo "✅ SSH access confirmed for ${{ inputs.wp_engine_site }}"
           else
-            echo "❌ SSH access failed for ${{ matrix.env }} - skipping deployment"
+            echo "❌ SSH access failed for ${{ inputs.wp_engine_site }} - skipping deployment"
             exit 0
           fi
 
@@ -119,12 +97,12 @@ jobs:
         run: |
           echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
           chmod 600 $HOME/wpe_key
-          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "mkdir -p sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}"
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ inputs.wp_engine_site }}@${{ inputs.wp_engine_site }}.ssh.wpengine.net \
+            "mkdir -p sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}"
 
       - name: Deploy theme to WP Engine
         run: |
-          echo "🚀 Deploying ${{ inputs.theme_name }} to WP Engine ${{ inputs.environment_type }} (${{ matrix.env }})..."
+          echo "🚀 Deploying ${{ inputs.theme_name }} to WP Engine ${{ inputs.environment_type }} (${{ inputs.wp_engine_site }})..."
           
           # Set up delete flag
           DELETE_FLAG=""
@@ -157,7 +135,7 @@ jobs:
             --exclude="*.md" \
             -e "ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key" \
             ./ \
-            wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net:sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/
+            wpe_gha+${{ inputs.wp_engine_site }}@${{ inputs.wp_engine_site }}.ssh.wpengine.net:sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/
 
       - name: Clean up unwanted files (if delete is enabled)
         if: inputs.delete
@@ -168,36 +146,36 @@ jobs:
           echo "Cleaning up unwanted files from WP Engine..."
           
           # Remove specific files and directories that should not be on the server
-          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "rm -rf sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/.git && \
-             rm -rf sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/.github && \
-             rm -rf sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/node_modules && \
-             rm -f sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/package.json && \
-             rm -f sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/package-lock.json && \
-             rm -f sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/README.md && \
-             rm -f sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/CHANGELOG.md && \
-             rm -f sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/.releaserc.json && \
-             rm -f sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }}/.gitignore && \
-             find sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }} -name '*.log' -delete && \
-             find sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }} -name '.DS_Store' -delete && \
-             find sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }} -name '*.md' -delete" 2>/dev/null || true
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ inputs.wp_engine_site }}@${{ inputs.wp_engine_site }}.ssh.wpengine.net \
+            "rm -rf sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/.git && \
+             rm -rf sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/.github && \
+             rm -rf sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/node_modules && \
+             rm -f sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/package.json && \
+             rm -f sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/package-lock.json && \
+             rm -f sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/README.md && \
+             rm -f sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/CHANGELOG.md && \
+             rm -f sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/.releaserc.json && \
+             rm -f sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }}/.gitignore && \
+             find sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }} -name '*.log' -delete && \
+             find sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }} -name '.DS_Store' -delete && \
+             find sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }} -name '*.md' -delete" 2>/dev/null || true
           
           echo "Cleanup completed."
 
       - name: Adjust permissions on deployed theme files
         run: |
-          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "find sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }} -type d -exec chmod 755 {} +; \
-             find sites/${{ matrix.env }}/wp-content/themes/${{ inputs.theme_name }} -type f -exec chmod 644 {} +"
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ inputs.wp_engine_site }}@${{ inputs.wp_engine_site }}.ssh.wpengine.net \
+            "find sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }} -type d -exec chmod 755 {} +; \
+             find sites/${{ inputs.wp_engine_site }}/wp-content/themes/${{ inputs.theme_name }} -type f -exec chmod 644 {} +"
 
       - name: Clear WP Engine cache
         if: inputs.cache_clear
         run: |
-          echo "🧹 Clearing WP Engine cache for ${{ matrix.env }}..."
-          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "wp cache flush --path=sites/${{ matrix.env }}/" 2>/dev/null || true
-          echo "✅ Cache cleared for ${{ matrix.env }}"
+          echo "🧹 Clearing WP Engine cache for ${{ inputs.wp_engine_site }}..."
+          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ inputs.wp_engine_site }}@${{ inputs.wp_engine_site }}.ssh.wpengine.net \
+            "wp cache flush --path=sites/${{ inputs.wp_engine_site }}/" 2>/dev/null || true
+          echo "✅ Cache cleared for ${{ inputs.wp_engine_site }}"
 
       - name: Log Deployment Summary
         run: |
-          echo "✅ Deployed theme ${{ inputs.theme_name }} to WP Engine ${{ inputs.environment_type }} (${{ matrix.env }})." >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployed theme ${{ inputs.theme_name }} to WP Engine ${{ inputs.environment_type }} (${{ inputs.wp_engine_site }})." >> $GITHUB_STEP_SUMMARY

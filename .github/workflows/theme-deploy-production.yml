@@ -151,6 +151,7 @@ jobs:
     with:
       theme_name: ${{ inputs.theme_name }}
       environment_type: production
+      wp_engine_site: ${{ inputs.wp_engine_site }}
       tag_name: ${{ inputs.tag_name }}
       dry_run: ${{ inputs.dry_run }}
       delete: ${{ inputs.include_delete_flag }}
