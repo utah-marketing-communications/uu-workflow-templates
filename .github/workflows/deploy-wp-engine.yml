@@ -47,19 +47,38 @@ jobs:
     outputs:
       envs: ${{ steps.extract.outputs.envs }}
     steps:
-      - name: Fetch installs from WP Engine API
+      - name: Fetch all installs from WP Engine API (with pagination)
         id: fetch
         run: |
-          curl -s -u "${{ secrets.WPE_ORG_API_USER }}:${{ secrets.WPE_ORG_API_PASS }}" \
-            "https://api.wpengineapi.com/v1/installs?limit=100" \
-            -o installs.json
+          # WP Engine API may return 40 per page by default. Paginate until we get 0 results.
+          # Do not stop when count < limit or we miss sites (e.g. only 40 of 52 production).
+          offset=0
+          limit=100
+          echo "[]" > all_installs.json
+          while true; do
+            echo "Fetching installs offset=$offset..."
+            curl -s -u "${{ secrets.WPE_ORG_API_USER }}:${{ secrets.WPE_ORG_API_PASS }}" \
+              "https://api.wpengineapi.com/v1/installs?limit=$limit&offset=$offset" \
+              -o page.json
+            count=$(jq '.results // [] | length' page.json)
+            if [ "$count" -eq 0 ]; then
+              echo "No more results at offset=$offset, stopping."
+              break
+            fi
+            echo "Got $count installs (offset=$offset)"
+            jq -s '.[0] + (.[1].results // [])' all_installs.json page.json > merged.json
+            mv merged.json all_installs.json
+            offset=$((offset + limit))
+          done
+          total=$(jq 'length' all_installs.json)
+          echo "Fetched $total total installs from WP Engine API"
       - name: Extract environment names
         id: extract
         run: |
           if [ "${{ inputs.environment_type }}" = "production" ]; then
-            envs=$(jq -r '[.results[] | select(.environment == "production") | .name] | @json' installs.json)
+            envs=$(jq -r '[.[] | select(.environment == "production") | .name] | @json' all_installs.json)
           else
-            envs=$(jq -r '[.results[] | select(.environment == "staging") | .name] | @json' installs.json)
+            envs=$(jq -r '[.[] | select(.environment == "staging") | .name] | @json' all_installs.json)
           fi
           echo "envs=$envs" >> $GITHUB_OUTPUT
 
