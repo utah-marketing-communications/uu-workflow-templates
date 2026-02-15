@@ -30,6 +30,26 @@ on:
         required: false
         type: boolean
         default: false
+      max_parallel:
+        description: 'Maximum number of WP Engine environments to deploy in parallel'
+        required: false
+        type: number
+        default: 5
+      throttle_delay_seconds:
+        description: 'Fixed delay before each deploy attempt to reduce burst traffic'
+        required: false
+        type: number
+        default: 3
+      cleanup_after_deploy:
+        description: 'Run post-deploy cleanup commands on remote server (delete mode only)'
+        required: false
+        type: boolean
+        default: false
+      set_permissions:
+        description: 'Run recursive chmod after deploy'
+        required: false
+        type: boolean
+        default: false
     secrets:
       WPE_ORG_API_USER:
         description: 'WP Engine API username'
@@ -86,9 +106,10 @@ jobs:
     needs: fetch-installs
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         env: ${{ fromJson(needs.fetch-installs.outputs.envs) }}
-      max-parallel: 5
+      max-parallel: ${{ inputs.max_parallel }}
     steps:
       - name: Test SSH access before deployment
         run: |
@@ -102,9 +123,10 @@ jobs:
           fi
 
       - name: Delay to avoid rate limiting
+        if: ${{ inputs.throttle_delay_seconds > 0 }}
         run: |
-          echo "Waiting 3 seconds to avoid WP Engine rate limits..."
-          sleep 3
+          echo "Waiting ${{ inputs.throttle_delay_seconds }} seconds to avoid WP Engine rate limits..."
+          sleep "${{ inputs.throttle_delay_seconds }}"
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -131,14 +153,13 @@ jobs:
           PHP_LINT: true
           CACHE_CLEAR: ${{ inputs.cache_clear }}
           FLAGS: -azvr ${{ inputs.delete && '--delete' || '--inplace' }} --exclude=".*" --exclude=".git/" --exclude=".github/" --exclude="node_modules/" --exclude="package.json" --exclude="package-lock.json" --exclude="README.md" --exclude="CHANGELOG.md" --exclude=".releaserc.json" --exclude="update-version-number.js" --exclude=".gitignore" --exclude=".rsyncignore" --exclude="*.log" --exclude=".DS_Store" --exclude="*.md" ${{ inputs.dry_run && '--dry-run' || '' }}
-        continue-on-error: true
 
 
 
 
 
-      - name: Clean up unwanted files (if delete is enabled)
-        if: inputs.delete
+      - name: Clean up unwanted files (if enabled)
+        if: ${{ !inputs.dry_run && inputs.delete && inputs.cleanup_after_deploy }}
         run: |
           echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
           chmod 600 $HOME/wpe_key
@@ -164,7 +185,8 @@ jobs:
           
           echo "Cleanup completed."
 
-      - name: Adjust permissions on deployed files
+      - name: Adjust permissions on deployed files (if enabled)
+        if: ${{ !inputs.dry_run && inputs.set_permissions }}
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
             "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -type d -exec chmod 775 {} +; \
