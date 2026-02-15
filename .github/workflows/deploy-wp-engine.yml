@@ -97,8 +97,35 @@ jobs:
           fi
           echo "envs=$envs" >> $GITHUB_OUTPUT
 
+  lint-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo for linting
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag_name || 'main' }}
+
+      - name: Lint PHP files once
+        run: |
+          set -e
+          PHP_FILES="$(git ls-files '*.php')"
+          if [ -z "$PHP_FILES" ]; then
+            echo "No PHP files found to lint."
+            exit 0
+          fi
+
+          echo "Linting PHP files once before matrix deployment..."
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
+            php -l "$file" >/dev/null
+          done <<< "$PHP_FILES"
+          echo "✅ PHP lint passed."
+
   deploy:
-    needs: fetch-installs
+    needs:
+      - fetch-installs
+      - lint-source
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -140,7 +167,7 @@ jobs:
           WPE_SSHG_KEY_PRIVATE: ${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}
           SRC_PATH: ./
           REMOTE_PATH: wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}/
-          PHP_LINT: true
+          PHP_LINT: false
           CACHE_CLEAR: ${{ inputs.cache_clear }}
           FLAGS: -azvr ${{ inputs.delete && '--delete' || '--inplace' }} --exclude=".*" --exclude=".git/" --exclude=".github/" --exclude="node_modules/" --exclude="package.json" --exclude="package-lock.json" --exclude="README.md" --exclude="CHANGELOG.md" --exclude=".releaserc.json" --exclude="update-version-number.js" --exclude=".gitignore" --exclude=".rsyncignore" --exclude="*.log" --exclude=".DS_Store" --exclude="*.md" ${{ inputs.dry_run && '--dry-run' || '' }}
 
