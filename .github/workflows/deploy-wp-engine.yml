@@ -106,17 +106,6 @@ jobs:
         env: ${{ fromJson(needs.fetch-installs.outputs.envs) }}
       max-parallel: ${{ inputs.max_parallel }}
     steps:
-      - name: Test SSH access before deployment
-        run: |
-          echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
-          chmod 600 $HOME/wpe_key
-          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net "echo 'SSH access confirmed'" 2>/dev/null; then
-            echo "✅ SSH access confirmed for ${{ matrix.env }}"
-          else
-            echo "❌ SSH access failed for ${{ matrix.env }} - skipping deployment"
-            exit 0
-          fi
-
       - name: Delay to avoid rate limiting
         if: ${{ inputs.throttle_delay_seconds > 0 }}
         run: |
@@ -131,12 +120,18 @@ jobs:
 
 
 
-      - name: Ensure plugin directory exists
+      - name: Validate SSH and ensure plugin directory exists
         run: |
           echo "${{ secrets.WPE_ORG_SSHG_KEY_PRIVATE }}" > $HOME/wpe_key
           chmod 600 $HOME/wpe_key
-          ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
-            "mkdir -p sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}"
+          REMOTE_PATH="sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }}"
+          if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
+            "echo 'SSH access confirmed'; mkdir -p \"$REMOTE_PATH\"" 2>/dev/null; then
+            echo "✅ SSH access confirmed and widget directory ensured for ${{ matrix.env }}"
+          else
+            echo "❌ SSH access failed or could not create widget directory for ${{ matrix.env }}"
+            exit 1
+          fi
 
       - name: Deploy to WP Engine
         uses: wpengine/github-action-wpe-site-deploy@v3
