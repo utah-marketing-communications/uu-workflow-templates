@@ -45,11 +45,6 @@ on:
         required: false
         type: boolean
         default: false
-      set_permissions:
-        description: 'Run recursive chmod after deploy'
-        required: false
-        type: boolean
-        default: false
     secrets:
       WPE_ORG_API_USER:
         description: 'WP Engine API username'
@@ -185,8 +180,8 @@ jobs:
           
           echo "Cleanup completed."
 
-      - name: Adjust permissions on deployed files (if enabled)
-        if: ${{ !inputs.dry_run && inputs.set_permissions }}
+      - name: Adjust permissions on deployed files
+        if: ${{ !inputs.dry_run }}
         run: |
           ssh -o StrictHostKeyChecking=no -i $HOME/wpe_key wpe_gha+${{ matrix.env }}@${{ matrix.env }}.ssh.wpengine.net \
             "find sites/${{ matrix.env }}/wp-content/plugins/uu-so-widgets/uu-so-widgets-bundle/${{ inputs.widget_name }} -type d -exec chmod 775 {} +; \

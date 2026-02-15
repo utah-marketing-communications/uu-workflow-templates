@@ -63,10 +63,6 @@ on:
         description: 'Run remote cleanup after WP Engine deploy (delete mode only)'
         type: boolean
         default: false
-      wp_set_permissions:
-        description: 'Run recursive chmod after WP Engine deploy'
-        type: boolean
-        default: false
 
 jobs:
   # AUX Production
@@ -147,7 +143,6 @@ jobs:
       max_parallel: ${{ inputs.wp_max_parallel }}
       throttle_delay_seconds: ${{ inputs.wp_throttle_delay_seconds }}
       cleanup_after_deploy: ${{ inputs.wp_cleanup_after_deploy }}
-      set_permissions: ${{ inputs.wp_set_permissions }}
     secrets:
       WPE_ORG_API_USER: ${{ secrets.WPE_ORG_API_USER }}
       WPE_ORG_API_PASS: ${{ secrets.WPE_ORG_API_PASS }}
