@@ -51,6 +51,22 @@ on:
         description: 'Clear WP Engine cache after deploy'
         type: boolean
         default: false
+      wp_max_parallel:
+        description: 'Maximum concurrent WP Engine site deployments'
+        type: number
+        default: 5
+      wp_throttle_delay_seconds:
+        description: 'Delay between WP Engine deploy attempts per site (seconds)'
+        type: number
+        default: 3
+      wp_cleanup_after_deploy:
+        description: 'Run remote cleanup after WP Engine deploy (delete mode only)'
+        type: boolean
+        default: false
+      wp_set_permissions:
+        description: 'Run recursive chmod after WP Engine deploy'
+        type: boolean
+        default: false
 
 jobs:
   # AUX Production
@@ -128,6 +144,10 @@ jobs:
       dry_run: ${{ inputs.wp_dry_run }}
       delete: ${{ inputs.wp_delete }}
       cache_clear: ${{ inputs.wp_cache_clear }}
+      max_parallel: ${{ inputs.wp_max_parallel }}
+      throttle_delay_seconds: ${{ inputs.wp_throttle_delay_seconds }}
+      cleanup_after_deploy: ${{ inputs.wp_cleanup_after_deploy }}
+      set_permissions: ${{ inputs.wp_set_permissions }}
     secrets:
       WPE_ORG_API_USER: ${{ secrets.WPE_ORG_API_USER }}
       WPE_ORG_API_PASS: ${{ secrets.WPE_ORG_API_PASS }}
