@@ -102,11 +102,26 @@ Reusable workflow for deploying to WP Engine environments.
 - `dry_run`: Run deployment in dry run mode (default: false)
 - `delete`: Include --delete flag in deployment (default: false)
 - `cache_clear`: Clear WP Engine cache after deploy (default: false)
+- `max_parallel`: Maximum concurrent WP Engine site deployments (default: 5)
+- `throttle_delay_seconds`: Delay before each deploy attempt (default: 1)
+- `cleanup_after_deploy`: Run post-deploy cleanup commands (default: false)
 
 **Required Secrets:**
 - `WPE_ORG_API_USER`: WP Engine API username
 - `WPE_ORG_API_PASS`: WP Engine API password
 - `WPE_ORG_SSHG_KEY_PRIVATE`: WP Engine SSH private key
+
+#### Current WP Engine Baseline
+
+The current default template behavior is tuned for speed while preserving file safety:
+
+- PHP lint runs once before deploy fanout (`lint-source` job)
+- Per-site action lint is disabled (`PHP_LINT: false`)
+- WP Engine deploy uses rsync chmod flags (`--chmod=D775,F664`)
+- No post-deploy recursive `find/chmod` pass
+- Matrix concurrency defaults to `max_parallel=5`
+- Throttle delay defaults to `throttle_delay_seconds=1`
+- Post-deploy cleanup remains optional and defaults to `cleanup_after_deploy=false`
 
 ## 🔧 Usage Examples
 

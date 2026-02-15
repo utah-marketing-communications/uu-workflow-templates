@@ -24,7 +24,7 @@ on:
         description: 'Include --delete flag in deployment (production only)'
         required: false
         type: boolean
-        default: true
+        default: false
       cache_clear:
         description: 'Clear WP Engine cache after deploy'
         required: false
