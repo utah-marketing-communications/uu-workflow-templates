@@ -39,7 +39,7 @@ on:
         description: 'Fixed delay before each deploy attempt to reduce burst traffic'
         required: false
         type: number
-        default: 3
+        default: 1
       cleanup_after_deploy:
         description: 'Run post-deploy cleanup commands on remote server (delete mode only)'
         required: false

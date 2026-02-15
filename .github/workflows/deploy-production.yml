@@ -58,7 +58,7 @@ on:
       wp_throttle_delay_seconds:
         description: 'Delay between WP Engine deploy attempts per site (seconds)'
         type: number
-        default: 3
+        default: 1
       wp_cleanup_after_deploy:
         description: 'Run remote cleanup after WP Engine deploy (delete mode only)'
         type: boolean
